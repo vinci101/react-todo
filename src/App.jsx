@@ -1,30 +1,27 @@
-import { useState } from "react";
-import "./App.css";
+import { useEffect, useState } from "react";
+import { NewTodoForm } from "../src/Components/NewTodoForm";
+import "../src/App.css";
+import { TodoList } from "../src/Components/TodoList";
 
-const App = () => {
-  const [newItem, setNewItem] = useState("");
-  const [todos, setTodos] = useState([]);
+export default function App() {
+  const [todos, setTodos] = useState(() => {
+    const localValue = localStorage.getItem("ITEMS");
+    if (localValue == null) return [];
 
-  function handleSubmit(e) {
-    e.preventDefault();
-    console.log(newItem);
+    return JSON.parse(localValue);
+  });
 
-    if (!newItem) {
-      alert("Please input a value");
-    } else
-      setTodos((currentTodos) => {
-        // console.log(
-        //   currentTodos.map((tod) => {
-        //     return tod.title == "s";
-        //   })
-        // );
-        return [
-          ...currentTodos,
-          { id: crypto.randomUUID(), title: newItem, completed: false },
-        ];
-      });
+  useEffect(() => {
+    localStorage.setItem("ITEMS", JSON.stringify(todos));
+  }, [todos]);
 
-    setNewItem(""); //clears the input every submit
+  function addTodo(title) {
+    setTodos((currentTodos) => {
+      return [
+        ...currentTodos,
+        { id: crypto.randomUUID(), title, completed: false },
+      ];
+    });
   }
 
   function toggleTodo(id, completed) {
@@ -33,45 +30,23 @@ const App = () => {
         if (todo.id === id) {
           return { ...todo, completed };
         }
+
         return todo;
       });
     });
   }
 
+  function deleteTodo(id) {
+    setTodos((currentTodos) => {
+      return currentTodos.filter((todo) => todo.id !== id);
+    });
+  }
+
   return (
     <>
-      <form onSubmit={handleSubmit} className="new-item-form">
-        <div className="form-row">
-          <label htmlFor="item">New Item</label>
-          <input
-            value={newItem}
-            onChange={(e) => setNewItem(e.target.value)} //accepts the text being typed in the input
-            type="text"
-            id="item"
-          />
-        </div>
-        <button className="btn">Add Item</button>
-      </form>
-      <h1 className="header"></h1>
-      <ul className="list">
-        {todos.map((todo) => {
-          return (
-            <li key={todo.id}>
-              <label>
-                <input
-                  type="checkbox"
-                  checked={todo.completed}
-                  onChange={(e) => toggleTodo(todo.id, e.target.checked)}
-                />
-                {todo.title}
-              </label>
-              <button className="btn btn-danger">Delete Item</button>
-            </li>
-          );
-        })}
-      </ul>
+      <NewTodoForm onSubmit={addTodo} />
+      <h1 className="header">Todo List</h1>
+      <TodoList todos={todos} toggleTodo={toggleTodo} deleteTodo={deleteTodo} />
     </>
   );
-};
-
-export default App;
+}
